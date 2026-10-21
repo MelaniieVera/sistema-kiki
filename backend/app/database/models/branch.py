@@ -32,6 +32,12 @@ class Branch(Base):
             "organization_id",
             name="uq_branches_id_organization",
         ),
+        UniqueConstraint(
+            "id",
+            "business_id",
+            "organization_id",
+            name="uq_branches_id_business_organization",
+        ),
         ForeignKeyConstraint(
             ["business_id", "organization_id"],
             ["businesses.id", "businesses.organization_id"],
