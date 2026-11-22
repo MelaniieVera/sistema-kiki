@@ -1,21 +1,26 @@
 from decimal import Decimal
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
-from pydantic_extra_types.timezone_name import _is_available
+from pydantic import BaseModel, Field, StringConstraints
+
+
+ProductName = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=125)
+]
+
 
 class ProductVariantCreate(BaseModel):
-    name: str
+    name: ProductName
     price: Decimal = Field(ge=0, max_digits=12, decimal_places=2)
-    preparation_area_i: UUID
-    _is_available: bool = True
+    preparation_area_id: UUID
+    is_available: bool = True
 
 class ProductCreate(BaseModel):
     category_id: UUID
-    name: str
-    description: Optional[str] = None
-    is_activate: bool = True
+    name: ProductName
+    description: Optional[str] = Field(default=None, max_length=500)
+    is_active: bool = True
     variant: ProductVariantCreate
 
 class ProductVariantRead(BaseModel):
