@@ -321,6 +321,8 @@ GET /health
 GET /api/v1/categories
 
 GET /api/v1/preparation-areas
+
+POST /api/v1/products
 ```
 
 ### GET /api/v1/categories
@@ -374,9 +376,9 @@ ProductVariantRead
 
 ---
 
-## 13. Request previsto para crear productos
+## 13. Request para crear productos
 
-El request conceptual actual es:
+Ejemplo de solicitud para crear Gyozas en la categoría Entradas, con presentación de 5 unidades y área de preparación Cocina.
 
 ```json
 {
@@ -405,144 +407,44 @@ El backend debe resolver y validar ese contexto.
 
 ---
 
-## 14. Endpoint actualmente en desarrollo
+## 14. POST /api/v1/products
 
-El siguiente endpoint está iniciado pero no terminado:
+El endpoint está terminado y registrado en la API v1. El backend resuelve el contexto de Grupo Kiki, Kiki Sushi y Santa Rosa. Valida que la categoría esté activa y pertenezca al negocio, y que el área de preparación esté activa y pertenezca a la sucursal.
 
-```http
-POST /api/v1/products
-```
+Los códigos del producto y de su variante se generan a partir de sus nombres. Si el código del producto ya existe en el mismo negocio, la API devuelve `409 Conflict`.
 
-Archivo:
+## 15. Verificación manual con Postman
 
-```text
-backend/app/api/v1/endpoints/products.py
-```
+El endpoint se probó manualmente con Postman contra PostgreSQL local.
 
-Actualmente ya se empezó a implementar:
-
-### Validación de categoría
-
-Debe comprobar que:
-
-- `category_id` existe;
-- pertenece a `grupo_kiki`;
-- pertenece a `kiki_sushi`;
-- está activa.
-
-### Validación de área de preparación
-
-Debe comprobar que:
-
-- `preparation_area_id` existe;
-- pertenece a `grupo_kiki`;
-- pertenece a `kiki_sushi`;
-- pertenece a `santa_rosa`;
-- está activa.
+| Caso | Resultado verificado |
+| --- | --- |
+| Creación válida | `201 Created`. Se crearon correctamente `Product`, `ProductVariant` y `BranchProductVariant`. |
+| Producto duplicado | `409 Conflict`. |
+| Referencias o contexto inválidos | `404 Not Found`. |
+| Datos inválidos | `422 Unprocessable Entity`. |
+| Precio y área de preparación | Ambos quedaron almacenados en `BranchProductVariant`. |
+| Transacción y rollback | La creación de los tres registros fue atómica. Ante un fallo se revirtió la operación completa sin dejar registros parciales. |
 
 ---
 
-## 15. Punto exacto donde continuar
+## 16. Siguiente objetivo
 
-El siguiente trabajo debe comenzar después de las validaciones anteriores.
+Implementar el frontend administrativo inicial para crear productos. El formulario «Nuevo producto» consumirá estos endpoints.
 
-Debe resolverse el contexto:
+| Endpoint | Uso en el formulario |
+| --- | --- |
+| `GET /api/v1/categories` | Cargar las categorías disponibles. |
+| `GET /api/v1/preparation-areas` | Cargar las áreas de preparación disponibles. |
+| `POST /api/v1/products` | Enviar la solicitud de creación del producto y su variante. |
 
-```text
-organization_id
-business_id
-branch_id
-```
-
-a partir de los registros ya validados.
-
-Después implementar, en este orden:
-
-```text
-1. Resolver/generar code del Product.
-2. Resolver/generar code del ProductVariant.
-3. Crear Product.
-4. Crear ProductVariant.
-5. Crear BranchProductVariant.
-6. Ejecutar todo dentro de una sola transacción.
-7. Hacer COMMIT únicamente si toda la operación funciona.
-8. Hacer ROLLBACK si ocurre un error.
-9. Construir ProductRead.
-10. Registrar el router de products.
-11. Probar POST /api/v1/products con Postman.
-```
-
-No saltar directamente al frontend antes de comprobar correctamente el endpoint en Postman.
+El formulario incluirá categoría, nombre, descripción, presentación, precio, área de preparación y disponibilidad.
 
 ---
 
-## 16. Primer producto real previsto para pruebas
+## 17. Trabajo posterior
 
-Los primeros productos reales disponibles para pruebas pertenecen a la categoría:
-
-```text
-Entradas
-```
-
-Ejemplo útil:
-
-```text
-Gyozas
-Presentación: 5 unidades
-Precio: 4.50
-Área: Cocina
-```
-
-Este producto puede utilizarse como primer caso de prueba de `POST /api/v1/products`.
-
----
-
-## 17. Frontend
-
-Todavía no se ha comenzado la implementación funcional del frontend administrativo.
-
-La intención es desarrollar backend y frontend por pequeñas rebanadas verticales:
-
-```text
-Endpoint
-↓
-Postman
-↓
-Frontend que consume el endpoint
-↓
-siguiente funcionalidad
-```
-
-El primer formulario previsto es:
-
-```text
-Nuevo producto
-```
-
-con campos como:
-
-```text
-Categoría
-Nombre
-Descripción
-Presentación
-Precio
-Área de preparación
-Disponibilidad
-```
-
----
-
-## 18. Próxima fase después de POST /products
-
-Una vez que la creación de productos funcione:
-
-```text
-GET /api/v1/products
-PATCH /api/v1/products/{id}
-```
-
-y comenzar el formulario administrativo de catálogo.
+Después del formulario inicial, el plan de catálogo contempla `GET /api/v1/products` y `PATCH /api/v1/products/{id}`.
 
 Después se avanzará hacia:
 
@@ -559,7 +461,7 @@ Wallet / Loyalty
 
 ---
 
-## 19. Estado resumido
+## 18. Estado resumido
 
 ```text
 PostgreSQL                  ✓
@@ -576,8 +478,8 @@ Postman                     ✓
 GET categories              ✓
 GET preparation-areas       ✓
 Schemas products            ✓
-POST products               EN DESARROLLO
-Frontend admin              PENDIENTE
+POST products               TERMINADO Y PROBADO EN POSTMAN
+Frontend admin              SIGUIENTE OBJETIVO
 POS                         PENDIENTE
 Orders                      PENDIENTE
 KDS                         PENDIENTE
